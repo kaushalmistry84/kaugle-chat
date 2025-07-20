@@ -1,0 +1,191 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Kaugle - Talk to strangers!</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f9f9f9;
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background-color: white;
+            padding: 10px 20px;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .logo {
+            font-size: 26px;
+            font-weight: bold;
+            color: #0080ff;
+        }
+
+        .logo span {
+            color: #ff8000;
+        }
+
+        #chatbox {
+            width: 95%;
+            max-width: 800px;
+            height: 50vh;
+            background: white;
+            margin: 20px auto 10px;
+            border: 1px solid #ccc;
+            padding: 10px;
+            overflow-y: auto;
+            font-size: 16px;
+        }
+        #chatbox div {
+             margin-bottom: 8px; /* Add space between messages */
+        }
+        #typingStatus {
+            width: 95%;
+            max-width: 800px;
+            margin: 0 auto;
+            font-style: italic;
+            color: gray;
+            text-align: left;
+        }
+
+        #controls {
+            width: 95%;
+            max-width: 800px;
+            margin: 10px auto 40px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        #controls input {
+            flex: 1 1 auto;
+            padding: 10px;
+            font-size: 16px;
+            min-width: 0;
+        }
+
+        #controls button {
+            padding: 10px 20px;
+            background: #0080ff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        #controls button:disabled {
+            background: #ccc;
+        }
+
+        @media (max-width: 600px) {
+            #controls {
+                flex-direction: column;
+            }
+
+            #controls button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <div class="logo">Kau<span>ge</span> - Talk to strangers!</div>
+    </header>
+
+    <div id="chatbox"></div>
+    <div id="typingStatus"></div>
+
+    <div id="controls">
+        <input type="text" id="msg" placeholder="Type your message...">
+        <button id="send">Send</button>
+        <button id="new">New</button>
+    </div>
+
+    <script>
+        let socket;
+        let typingTimeout;
+        const chatbox = document.getElementById("chatbox");
+        const typingStatus = document.getElementById("typingStatus");
+
+        function appendMessage(content) {
+            const div = document.createElement("div");
+            div.innerHTML = content;
+            chatbox.appendChild(div);
+            chatbox.scrollTop = chatbox.scrollHeight;
+        }
+
+        function startSocket() {
+            socket = new WebSocket("ws://" + window.location.host + "/ws/chat/");
+
+            socket.onopen = () => {
+                appendMessage('<i class="fas fa-circle-check" style="color:green;"></i> Connected');
+            };
+
+            socket.onmessage = (e) => {
+                const data = JSON.parse(e.data);
+                if (data.type === "connected") {
+                    appendMessage('<i class="fas fa-user-check" style="color:green;"></i> Stranger connected.');
+                } else if (data.type === "message") {
+                    appendMessage("<b>Stranger:</b> " + data.message);
+                    typingStatus.innerText = "";
+                } else if (data.type === "leave") {
+                    appendMessage('<i class="fas fa-user-xmark" style="color:red;"></i> Stranger disconnected.');
+                    typingStatus.innerText = "";
+                } else if (data.type === "typing") {
+                    typingStatus.innerText = "Stranger is typing...";
+                    clearTimeout(typingTimeout);
+                    typingTimeout = setTimeout(() => {
+                        typingStatus.innerText = "";
+                    }, 1500);
+                }
+            };
+
+            socket.onclose = () => {
+                appendMessage('<i class="fas fa-triangle-exclamation" style="color:orange;"></i> Disconnected. Click "New" to reconnect.');
+                typingStatus.innerText = "";
+            };
+        }
+
+        document.getElementById("send").onclick = () => {
+            const msgInput = document.getElementById("msg");
+            const message = msgInput.value;
+            if (socket.readyState === WebSocket.OPEN) {
+                socket.send(JSON.stringify({ type: "message", message }));
+                appendMessage("<b>You:</b> " + message);
+                msgInput.value = "";
+            }
+        };
+
+        document.getElementById("new").onclick = () => {
+            if (socket) socket.close();
+            appendMessage("🔄 Finding new partner...");
+            setTimeout(startSocket, 500);
+        };
+
+        document.getElementById("msg").addEventListener("input", () => {
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                socket.send(JSON.stringify({ type: "typing" }));
+            }
+        });
+
+        startSocket();
+    </script>
+
+</body>
+
+</html>
