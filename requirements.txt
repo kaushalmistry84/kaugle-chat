@@ -52,7 +52,6 @@ pyOpenSSL==25.1.0
 pyparsing==3.2.0
 python-dateutil==2.9.0.post0
 PyYAML==6.0.2
-redis==6.2.0
 regex==2024.11.6
 requests==2.32.4
 safetensors==0.5.3
