@@ -48,11 +48,17 @@ INSTALLED_APPS = [
 
 ASGI_APPLICATION = "omeglechat.asgi.application"
 
+os.environ["REDIS_URL"] = "redis://default:ATYiAAIjcDE5NTJlZGE1NDRkOGI0ZGY4ODkwNTdkNWU5MjY5YjI2ZHAxMA@exotic-jay-13858.upstash.io:6379"
+
+
 # Channels layers (for production use Redis)
 CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels.layers.InMemoryChannelLayer"
-    }
+   "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [os.environ["REDIS_URL"]],
+        },
+    },
 }
 
 MIDDLEWARE = [
