@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-#ayc(&pt*#bf!dw#1=ck*1rpm6v^v5wu6*row23ct!yxqj!$-n
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['kaugle-chat.onrender.com', 'localhost', '127.0.0.1']
 
 
 # Application definition
